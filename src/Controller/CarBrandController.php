@@ -57,23 +57,21 @@ class CarBrandController extends AbstractController
                     'message' => 'La marque existe déjà'
                 ]);
             }
-            
-            // On créé une nouvelle marque de voiture
-            $carBrand = new CarBrand();
+            // Sinon on l'ajoute toujours en minuscule et sans espace
+            else {
+                // On crée une nouvelle marque de voiture
+                $carBrand = new CarBrand();
+                $carBrand->setName(strtolower(trim($name)));
 
-            // On set le nom de la marque de voiture
-            $carBrand->setName($name);
+                // On ajoute la marque de voiture en base de données
+                $entityManager->persist($carBrand);
+                $entityManager->flush();
 
-            // On ajoute la marque de voiture en base de données
-            $entityManager->persist($carBrand);
+                return $this->json([
+                    'message' => 'La marque a bien été ajoutée'
+                ]);
+            }
 
-            // On envoie les données en base de données
-            $entityManager->flush();
-
-            // On retourne un message de succès
-            return $this->json([
-                'message' => 'La marque a bien été ajoutée'
-            ]);
         } catch (\Exception $e) {
             return $this->json([
                 // On retourne un message d'erreur en fonction de l'erreur
