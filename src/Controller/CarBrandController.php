@@ -18,10 +18,10 @@ class CarBrandController extends AbstractController
     #[Route('/listeMarque', name: 'listeMarque', methods: ['GET'])]
     public function listBrand(ManagerRegistry $doctrine): JsonResponse
     {
-        $carBrand = $doctrine->getRepository(CarBrand::class)->findAll();
+        $carBrands = $doctrine->getRepository(CarBrand::class)->findAll();
         $data = [];
 
-        foreach ($carBrand as $brand) {
+        foreach ($carBrands as $brand) {
             $data[] = [
                 'id' => $brand->getId(),
                 'name' => strtolower(trim($brand->getName()))

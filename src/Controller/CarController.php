@@ -15,10 +15,10 @@ class CarController extends AbstractController
     #[Route('/listeVoiture', name: 'listeVoiture', methods: ['GET'])]
     public function listCar(ManagerRegistry $doctrine): JsonResponse
     {
-        $car = $doctrine->getRepository(Car::class)->findAll();
+        $cars = $doctrine->getRepository(Car::class)->findAll();
         $data = [];
 
-        foreach ($car as $car) {
+        foreach ($cars as $car) {
             $data[] = [
                 'id' => $car->getId(),
                 'numberPlate' => strtolower(trim($car->getNumberPlate())),
