@@ -22,6 +22,10 @@ class Car
     #[ORM\Column(length: 100)]
     private ?string $model = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?CarBrand $brand = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -62,4 +66,17 @@ class Car
 
         return $this;
     }
+
+    public function getBrand(): ?CarBrand
+    {
+        return $this->brand;
+    }
+
+    public function setBrand(?CarBrand $brand): self
+    {
+        $this->brand = $brand;
+
+        return $this;
+    }
+
 }

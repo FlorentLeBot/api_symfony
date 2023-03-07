@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Car;
+use App\Entity\CarBrand;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,7 +24,8 @@ class CarController extends AbstractController
                 'id' => $car->getId(),
                 'numberPlate' => strtolower(trim($car->getNumberPlate())),
                 'numberOfSeats' => $car->getNumberOfSeats(),
-                'model' => strtolower(trim($car->getModel()))
+                'model' => strtolower(trim($car->getModel())),
+                'brand' => strtolower(trim($car->getBrand()->getName()))
             ];
         }
 
@@ -41,9 +43,10 @@ class CarController extends AbstractController
             $numberPlate = $request->get('numberPlate');
             $numberOfSeats = $request->get('numberOfSeats');
             $model = $request->get('model');
+            $brand = $request->get('brand');
 
             // On vérifie si les champs sont vides
-            if (empty($numberPlate) || empty($numberOfSeats) || empty($model)) {
+            if (empty($numberPlate) || empty($numberOfSeats) || empty($model) || empty($brand)) {
                 return $this->json([
                     'message' => 'Tous les champs sont obligatoires'
                 ]);
@@ -70,6 +73,16 @@ class CarController extends AbstractController
             $car->setNumberOfSeats($numberOfSeats);
 
             $car->setModel(strtolower(trim($model)));
+
+            // On vérifie si la marque existe grâce à son id
+            $carBrand = $doctrine->getRepository(CarBrand::class)->find($brand);
+            if (!$carBrand) {
+                return $this->json([
+                    'message' => 'La marque n\'existe pas'
+                ]);
+            }
+
+            $car->setBrand($carBrand);
 
             // On enregistre la voiture
             $entityManager->persist($car);
@@ -108,9 +121,10 @@ class CarController extends AbstractController
             $numberPlate = $request->get('numberPlate');
             $numberOfSeats = $request->get('numberOfSeats');
             $model = $request->get('model');
+            $brand = $request->get('brand');
 
             // Si un des champs est vide, on ne modifie pas
-            if (empty($numberPlate) || empty($numberOfSeats) || empty($model)) {
+            if (empty($numberPlate) || empty($numberOfSeats) || empty($model) || empty($brand)) {
                 return $this->json([
                     'message' => 'Tous les champs sont obligatoires'
                 ]);
@@ -129,6 +143,14 @@ class CarController extends AbstractController
             $car->setNumberOfSeats($numberOfSeats);
 
             $car->setModel(strtolower(trim($model)));
+
+            // On vérifie si la marque existe grâce à son id
+            $carBrand = $doctrine->getRepository(CarBrand::class)->find($brand);
+            if (!$carBrand) {
+                return $this->json([
+                    'message' => 'La marque n\'existe pas'
+                ]);
+            }
 
             // On enregistre la voiture modifiée
             $entityManager->persist($car);
