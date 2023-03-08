@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Travel;
+use App\Entity\City;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,7 +31,9 @@ class TravelController extends AbstractController
                 'id' => $travel->getId(),
                 'DateOfDeparture' => $travel->getDateOfDeparture()->format('d/m/Y à H\hi'),
                 'arrivalDate' => $travel->getArrivalDate()->format('d/m/Y à H\hi'),
-                'kilometer' => $travel->getKilometer()
+                'kilometer' => $travel->getKilometer(),
+                'startingCity' => $travel->getStartingCity(),
+                'arrivalCity' => $travel->getArrivalCity(),
             ];
         }
 
@@ -50,10 +53,12 @@ class TravelController extends AbstractController
             $DateOfDeparture = $request->get('DateOfDeparture');
             $arrivalDate = $request->get('arrivalDate');
             $kilometer = $request->get('kilometer');
+            $startingCity = $request->get('startingCity');
+            $arrivalCity = $request->get('arrivalCity');
 
 
             // On vérifie si les champs sont vides
-            if (empty($DateOfDeparture) || empty($arrivalDate) || empty($kilometer)) {
+            if (empty($DateOfDeparture) || empty($arrivalDate) || empty($kilometer) || empty($startingCity) || empty($arrivalCity)) {
                 return $this->json([
                     'message' => 'Tous les champs sont obligatoires'
                 ]);
@@ -73,17 +78,11 @@ class TravelController extends AbstractController
                 ]);
             }
 
-            // On vérifie si le nombre de kilomètres est un entier et il doit être supérieur à 0
-            if (!is_int($kilometer) && $kilometer < 0) {
-
-                return $this->json([
-                    'message' => 'Le nombre de kilomètres doit être un entier et supérieur à 0'
-                ]);
-            }
+            
             // On vérifie si le nombre de kilomètres n'est pas un nombre décimal ou un string
-            if (is_float($kilometer) || is_string($kilometer)) {
+            if (!is_numeric($kilometer)) {
                 return $this->json([
-                    'message' => 'Le nombre de kilomètres doit être un entier et supérieur à 0'
+                    'message' => 'Le nombre de kilomètres doit être un nombre entier'
                 ]);
             }
 
@@ -93,6 +92,30 @@ class TravelController extends AbstractController
                     'message' => 'La date doit être au format français (jj/mm/aaaa à hh\hi) ex: 01/01/2021 à 12\00'
                 ]);
             }
+
+            // On vérifie si la ville de départ et d'arrivée sont différentes
+            if ($startingCity == $arrivalCity) {
+                return $this->json([
+                    'message' => 'La ville de départ et d\'arrivée doivent être différentes'
+                ]);
+            }
+
+            // On vérifie que la ville de départ et la ville d'arrivé existent bien grâce à leurs ids
+
+            // Il ne faut pas que les attributs deviennent __isCloning car sinon on ne peut plus les utiliser
+            
+            $startingCity = $doctrine->getRepository(City::class)->find($startingCity);
+            $arrivalCity = $doctrine->getRepository(City::class)->find($arrivalCity);
+            
+
+            if (!$startingCity || !$arrivalCity) {
+                return $this->json([
+                    'message' => 'La ville de départ et/ou d\'arrivée n\'existe pas'
+                ]);
+            }
+
+            $travel->setStartingCity($startingCity);
+            $travel->setArrivalCity($arrivalCity);
 
             $travel->setDateOfDeparture($DateOfDeparture);
             $travel->setArrivalDate($arrivalDate);
@@ -106,7 +129,7 @@ class TravelController extends AbstractController
             ]);
         } catch (\Exception $e) {
             return $this->json([
-                'message' => 'Une erreur est survenue'
+                'message' => $e->getMessage()
             ]);
         }
     }

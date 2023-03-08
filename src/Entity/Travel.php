@@ -23,6 +23,14 @@ class Travel
     #[ORM\Column]
     private ?int $kilometer = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?City $startingCity = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?City $arrivalCity = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +68,30 @@ class Travel
     public function setKilometer(int $kilometer): self
     {
         $this->kilometer = $kilometer;
+
+        return $this;
+    }
+
+    public function getStartingCity(): ?City
+    {
+        return $this->startingCity;
+    }
+
+    public function setStartingCity(?City $startingCity): self
+    {
+        $this->startingCity = $startingCity;
+
+        return $this;
+    }
+
+    public function getArrivalCity(): ?City
+    {
+        return $this->arrivalCity;
+    }
+
+    public function setArrivalCity(?City $arrivalCity): self
+    {
+        $this->arrivalCity = $arrivalCity;
 
         return $this;
     }
