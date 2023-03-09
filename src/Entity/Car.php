@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\CarRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CarRepository::class)]
@@ -22,9 +24,17 @@ class Car
     #[ORM\Column(length: 100)]
     private ?string $model = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: CarBrand::class, inversedBy: 'id_Car', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     private ?CarBrand $brand = null;
+
+    #[ORM\ManyToMany(targetEntity: UserInformation::class, mappedBy: 'id_Car' , cascade: ['persist', 'remove'])]
+    private Collection $id_UserInformation;
+
+    public function __construct()
+    {
+        $this->id_UserInformation = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -78,5 +88,33 @@ class Car
 
         return $this;
     }
+
+    /**
+     * @return Collection<int, UserInformation>
+     */
+    public function getIdUserInformation(): Collection
+    {
+        return $this->id_UserInformation;
+    }
+
+    public function addIdUserInformation(UserInformation $idUserInformation): self
+    {
+        if (!$this->id_UserInformation->contains($idUserInformation)) {
+            $this->id_UserInformation->add($idUserInformation);
+            $idUserInformation->addIdCar($this);
+        }
+        return $this;
+    }
+
+    public function removeIdUserInformation(UserInformation $idUserInformation): self
+    {
+        if ($this->id_UserInformation->removeElement($idUserInformation)) {
+            $idUserInformation->removeIdCar($this);
+        }
+
+        return $this;
+    }
+
+   
 
 }

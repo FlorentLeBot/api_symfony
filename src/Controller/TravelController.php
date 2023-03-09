@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Travel;
 use App\Entity\City;
+use App\Entity\UserInformation;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,6 +23,7 @@ class TravelController extends AbstractController
 
         $travels = $doctrine->getRepository(Travel::class)->findAll();
 
+
         $data = [];
 
         // On récupère les dates de départ et d'arrivée au format français
@@ -32,8 +34,9 @@ class TravelController extends AbstractController
                 'DateOfDeparture' => $travel->getDateOfDeparture()->format('d/m/Y à H\hi'),
                 'arrivalDate' => $travel->getArrivalDate()->format('d/m/Y à H\hi'),
                 'kilometer' => $travel->getKilometer(),
-                'startingCity' => $travel->getStartingCity(),
-                'arrivalCity' => $travel->getArrivalCity(),
+                'startingCity' => $travel->getStartingCity()->getName(),
+                'arrivalCity' => $travel->getArrivalCity()->getName(),
+                'driver' => $travel->getDriver()->getFirstName() . ' ' . $travel->getDriver()->getLastName(),
             ];
         }
 
@@ -48,17 +51,23 @@ class TravelController extends AbstractController
     public function addTravel(Request $request, ManagerRegistry $doctrine): JsonResponse
     {
         try {
+
+            // On récupère le manager de Doctrine
             $entityManager = $doctrine->getManager();
+
+            // On récupère l'entité City
+            $startingCity = $doctrine->getRepository(City::class)->find($request->get('startingCity'));
+            $arrivalCity = $doctrine->getRepository(City::class)->find($request->get('arrivalCity'));
+
+            // On récupère le chauffeur
+            $driver = $doctrine->getRepository(UserInformation::class)->find($request->get('driver'));
 
             $DateOfDeparture = $request->get('DateOfDeparture');
             $arrivalDate = $request->get('arrivalDate');
             $kilometer = $request->get('kilometer');
-            $startingCity = $request->get('startingCity');
-            $arrivalCity = $request->get('arrivalCity');
-
-
+           
             // On vérifie si les champs sont vides
-            if (empty($DateOfDeparture) || empty($arrivalDate) || empty($kilometer) || empty($startingCity) || empty($arrivalCity)) {
+            if (empty($DateOfDeparture) || empty($arrivalDate) || empty($kilometer) || empty($startingCity) || empty($arrivalCity) || empty($driver)) {
                 return $this->json([
                     'message' => 'Tous les champs sont obligatoires'
                 ]);
@@ -67,7 +76,7 @@ class TravelController extends AbstractController
             $travel = new Travel();
             $date   = new DateTime();
 
-
+            // On formate les dates au format français
             $DateOfDeparture = $date->createFromFormat('d/m/Y à H\hi', $DateOfDeparture);
             $arrivalDate = $date->createFromFormat('d/m/Y à H\hi', $arrivalDate);
 
@@ -78,7 +87,6 @@ class TravelController extends AbstractController
                 ]);
             }
 
-            
             // On vérifie si le nombre de kilomètres n'est pas un nombre décimal ou un string
             if (!is_numeric($kilometer)) {
                 return $this->json([
@@ -99,14 +107,10 @@ class TravelController extends AbstractController
                     'message' => 'La ville de départ et d\'arrivée doivent être différentes'
                 ]);
             }
-
-            // On vérifie que la ville de départ et la ville d'arrivé existent bien grâce à leurs ids
-
-            // Il ne faut pas que les attributs deviennent __isCloning car sinon on ne peut plus les utiliser
             
             $startingCity = $doctrine->getRepository(City::class)->find($startingCity);
             $arrivalCity = $doctrine->getRepository(City::class)->find($arrivalCity);
-            
+        
 
             if (!$startingCity || !$arrivalCity) {
                 return $this->json([
@@ -114,8 +118,25 @@ class TravelController extends AbstractController
                 ]);
             }
 
+            // On vérifie si le chauffeur existe, s'il est disponible et s'il a bien un véhicule
+            if (!$driver) {
+                return $this->json([
+                    'message' => 'Ce chauffeur n\'existe pas'
+                ]);
+            }
+
+            // On vérifie si l'utilisateur à bien un véhicule
+            if (!$driver->getVehicle()) {
+                return $this->json([
+                    'message' => 'Ce chauffeur n\'a pas de véhicule'
+                ]);
+            }
+
+                        
             $travel->setStartingCity($startingCity);
             $travel->setArrivalCity($arrivalCity);
+
+            $travel->setDriver($driver);
 
             $travel->setDateOfDeparture($DateOfDeparture);
             $travel->setArrivalDate($arrivalDate);
@@ -133,7 +154,6 @@ class TravelController extends AbstractController
             ]);
         }
     }
-
 
     //------------------------------------------------------------------------------------------------------------
 
@@ -167,4 +187,53 @@ class TravelController extends AbstractController
 
     //------------------------------------------------------------------------------------------------------------
   
+    // récupérer tous les conducteurs 
+
+    #[Route('/listeInscriptionDriver', name: 'listeInscriptionDriver')]
+    public function listDriver(ManagerRegistry $doctrine): JsonResponse
+    {
+        $drivers = $doctrine->getRepository(UserInformation::class)->findAll();
+
+        $data = [];
+
+        foreach ($drivers as $driver) {
+
+            // On vérifie si le conducteur a un véhicule
+            if (!$driver->getVehicle()) {
+                continue;
+            }
+            $data[] = [
+                'id' => $driver->getId(),
+                'firstName' => $driver->getFirstName(),
+                'lastName' => $driver->getLastName(),
+                'email' => $driver->getEmail(),
+                'phone' => $driver->getPhone(),     
+            ];
+        }
+
+        return $this->json($data);
+    }
+    //------------------------------------------------------------------------------------------------------------
+
+    // récupérer un conducteur grâce à l'id trajet
+
+    //------------------------------------------------------------------------------------------------------------
+
+    // récupérer tous les passagers
+
+    //------------------------------------------------------------------------------------------------------------
+
+    // supprimer un passager
+
+    //------------------------------------------------------------------------------------------------------------
+
+    // ajouter un passager à un trajet
+
+    //------------------------------------------------------------------------------------------------------------
+
+    // récupérer tous les personnes inscrites à un trajet
+
+    //------------------------------------------------------------------------------------------------------------
+        
+
 }

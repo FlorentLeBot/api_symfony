@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Car;
 use App\Entity\CarBrand;
+use App\Entity\UserInformation;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,10 +14,14 @@ use Symfony\Component\HttpFoundation\Request;
 
 class CarController extends AbstractController
 {
+
+    // Afficher la liste des voitures
+
     #[Route('/listeVoiture', name: 'listeVoiture', methods: ['GET'])]
     public function listCar(ManagerRegistry $doctrine): JsonResponse
     {
         $cars = $doctrine->getRepository(Car::class)->findAll();
+
         $data = [];
 
         foreach ($cars as $car) {
@@ -25,7 +30,7 @@ class CarController extends AbstractController
                 'numberPlate' => strtolower(trim($car->getNumberPlate())),
                 'numberOfSeats' => $car->getNumberOfSeats(),
                 'model' => strtolower(trim($car->getModel())),
-                'brand' => strtolower(trim($car->getBrand()->getName()))
+                'brand' => strtolower(trim($car->getBrand()->getName())),
             ];
         }
 
@@ -33,6 +38,8 @@ class CarController extends AbstractController
     }
 
     //------------------------------------------------------------------------------------------------------------
+
+    // Ajouter une voiture
 
     #[Route('/insertVoiture', name: 'insertVoiture', methods: ['POST'])]
     public function addCar(Request $request, ManagerRegistry $doctrine): JsonResponse
@@ -46,7 +53,7 @@ class CarController extends AbstractController
             $brand = $request->get('brand');
 
             // On vérifie si les champs sont vides
-            if (empty($numberPlate) || empty($numberOfSeats) || empty($model) || empty($brand)) {
+            if (empty($numberPlate) || empty($numberOfSeats) || empty($model) || empty($brand) || empty($userInformation)) {
                 return $this->json([
                     'message' => 'Tous les champs sont obligatoires'
                 ]);
@@ -61,18 +68,13 @@ class CarController extends AbstractController
 
             $car = new Car();
 
-            $car->setNumberPlate(strtolower(trim($numberPlate)));
-
             // On vérifie si le nombre de sièges est un entier et il doit être supérieur à 0
             if (!is_int($numberOfSeats) && $numberOfSeats < 0) {
 
                 return $this->json([
                     'message' => 'Le nombre de sièges doit être un entier supérieur à 0'
                 ]);
-            }
-            $car->setNumberOfSeats($numberOfSeats);
-
-            $car->setModel(strtolower(trim($model)));
+            } 
 
             // On vérifie si la marque existe grâce à son id
             $carBrand = $doctrine->getRepository(CarBrand::class)->find($brand);
@@ -82,6 +84,9 @@ class CarController extends AbstractController
                 ]);
             }
 
+            $car->setNumberPlate(strtolower(trim($numberPlate)));
+            $car->setNumberOfSeats($numberOfSeats);
+            $car->setModel(strtolower(trim($model)));
             $car->setBrand($carBrand);
 
             // On enregistre la voiture

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserInformationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserInformationRepository::class)]
@@ -27,6 +29,23 @@ class UserInformation
 
     #[ORM\Column(length: 50)]
     private ?string $city = null;
+
+    #[ORM\ManyToMany(targetEntity: Car::class, inversedBy: 'id_UserInformation', cascade: ['persist', 'remove'])]
+    private Collection $id_Car;
+
+    #[ORM\ManyToMany(targetEntity: Travel::class, inversedBy: 'id_userInformation', cascade: ['persist', 'remove'])]
+    private Collection $id_travel;
+
+    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
+
+
+    public function __construct()
+    {
+        $this->id_Car = new ArrayCollection();
+        $this->id_travel = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -92,4 +111,73 @@ class UserInformation
 
         return $this;
     }
+
+    /**
+     * @return Collection<int, Car>
+     */
+    public function getIdCar(): Collection
+    {
+        return $this->id_Car;
+    }
+
+    public function addIdCar(Car $idCar): self
+    {
+        if (!$this->id_Car->contains($idCar)) {
+            $this->id_Car->add($idCar);
+        }
+
+        return $this;
+    }
+
+    public function removeIdCar(Car $idCar): self
+    {
+        $this->id_Car->removeElement($idCar);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Travel>
+     */
+    public function getIdTravel(): Collection
+    {
+        return $this->id_travel;
+    }
+
+    public function addIdTravel(Travel $idTravel): self
+    {
+        if (!$this->id_travel->contains($idTravel)) {
+            $this->id_travel->add($idTravel);
+        }
+
+        return $this;
+    }
+
+    public function removeIdTravel(Travel $idTravel): self
+    {
+        $this->id_travel->removeElement($idTravel);
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(User $user): self
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+    
+    public function getVehicle(): ?string
+    {
+        $vehicle = '';
+        foreach ($this->id_Car as $car) {
+            $vehicle .= $car->getNumberPlate() . ' ';
+        }
+        return $vehicle;
+    } 
 }

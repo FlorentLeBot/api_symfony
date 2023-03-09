@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TravelRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -30,6 +32,18 @@ class Travel
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?City $arrivalCity = null;
+
+    #[ORM\ManyToMany(targetEntity: UserInformation::class, mappedBy: 'id_travel')]
+    private Collection $id_userInformation;
+
+    #[ORM\ManyToOne(inversedBy: 'travel')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?UserInformation $driver = null;
+
+    public function __construct()
+    {
+        $this->id_userInformation = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -95,4 +109,44 @@ class Travel
 
         return $this;
     }
+
+    /**
+     * @return Collection<int, UserInformation>
+     */
+    public function getIdUserInformation(): Collection
+    {
+        return $this->id_userInformation;
+    }
+
+    public function addIdUserInformation(UserInformation $idUserInformation): self
+    {
+        if (!$this->id_userInformation->contains($idUserInformation)) {
+            $this->id_userInformation->add($idUserInformation);
+            $idUserInformation->addIdTravel($this);
+        }
+
+        return $this;
+    }
+
+    public function removeIdUserInformation(UserInformation $idUserInformation): self
+    {
+        if ($this->id_userInformation->removeElement($idUserInformation)) {
+            $idUserInformation->removeIdTravel($this);
+        }
+
+        return $this;
+    }
+
+    public function getDriver(): ?UserInformation
+    {
+        return $this->driver;
+    }
+
+    public function setDriver(?UserInformation $driver): self
+    {
+        $this->driver = $driver;
+
+        return $this;
+    }
+
 }
